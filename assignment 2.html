@@ -1,0 +1,96 @@
+<!DOCTYPE>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>handlebara2</title>
+  </head>
+  <body>
+    <script src="jquery-3.2.1.js"></script>
+    <script src="handlebars-v4.0.10.js"></script>
+
+    <button id='search'>Click Me</button>
+    <input id='input' value="search">
+    <div id='holder'></div>
+
+    <script id="name_template" type="text/x-handlebars-template">
+      {{#each .}}
+          <div>
+            <a {{link my_link}} {{title}}</a>
+            <p>
+              Score: {{score}}
+            </p>
+            <p>
+              Number of comments:
+              {{#if comment}}
+                {{comment}}
+              {{else}}
+                No comments
+              {{/if}}
+            </p>
+          </div>
+        {{/each}}
+    </script>
+
+    <script id="error_template" type="text/x-handlebars-template">
+      <div>
+        <h1>{{errorMsg}}</h1>
+      </div>
+    </script>
+
+
+    <script>
+// Main javascript/jquery
+      var titleArray = [];
+      var errorArray = [{errorMsg: "Oops! Something went wrong!"}];
+
+// Makes title link
+      $(function(){
+        Handlebars.registerHelper('link', function(my_link) {
+          var url = Handlebars.escapeExpression(my_link);
+          var result = "href='" + url + "'>";
+          return new Handlebars.SafeString(result);
+        });
+      });
+
+// Following 2 populate array with post objects
+      function populate(subreddit) {
+          $.getJSON('https://www.reddit.com/r/' + subreddit + '.json', function(results){
+      			$.each(results.data.children, function(i, num) {
+              makeObjects('https://www.reddit.com'+num.data.permalink, num.data.title, num.data.score, num.data.num_comments);
+            });
+            loadTemplate('#name_template', titleArray);
+            // need to add how to call error, need promise
+          });
+        }
+
+      function makeObjects(iLink, iTitle, iScore, iComment) {
+        titleArray.push({
+          my_link : iLink,
+          title : iTitle,
+          score : iScore,
+          comment : iComment,
+        });
+      }
+
+// allows loading of more than one template
+      function loadTemplate(template_id, inArr) {
+        var context = inArr;
+        var templateScript = $(template_id).html();
+        var template = Handlebars.compile(templateScript);
+        var compiledHtml = template(context);
+        $('#holder').html(compiledHtml);
+      }
+
+// what you see on the screen
+      const button = $('#search');
+      const inString = $('#input');
+
+
+      button.on('click', function() {
+        titleArray = [];
+        populate(inString.val())
+      });
+    </script>
+
+  </body>
+</html>
